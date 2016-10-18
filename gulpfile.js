@@ -10,5 +10,8 @@ gulp.task("compress",()=>{
         .pipe($.uglify({
             compress: true
         }))
+        .pipe($.rename(function (path) {
+            path.extname = '.min.js'
+        }))
         .pipe(gulp.dest('dist'));
 });

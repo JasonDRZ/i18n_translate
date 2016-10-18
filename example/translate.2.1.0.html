@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="Description" content="">
+    <meta name="Keywords" content=""/>
+    <!--<meta http-equiv="Pragma" content="no-cache" />-->
+    <title translate="b.b_a">Title</title>
+    <script src="../src/translate.2.1.0.js"></script>
+</head>
+<body style="padding: 10px 50px">
+<div translateWrapper="no">
+    <h1 style="color: red;">语言一转换区域</h1>
+    <h1>@{b.b_a | translate}</h1>
+    <h1 style="color: red;">语言二转换区域</h1>
+    <h1>@{b.b_a | transtwo}</h1>
+    <h1>@{b.b_b.b_b_a | transtwo}</h1>
+    <h1 style="color: red;">语言三转换区域</h1>
+    <h1>@{a}</h1>
+    <h1>@{b.b_a}</h1>
+</div>
+<h1 style="color: red;">语言一转换区域</h1>
+<h2 translate="a"></h2>
+<h2 translate="b.b_a"></h2>
+<h2 translate="b.b_b.b_b_a"></h2>
+<button type="button" onclick="insertDom()">插入新的元素</button>
+<select onchange="trans.use(this.value)">
+    <option>请选择trans语言</option>&dollar;
+    <option value="en">EN</option>
+    <option value="zh">ZH</option>
+    <option value="cn">CN</option>
+</select>
+<select onchange="transVer.trans2.use(this.value)">
+    <option>请选择trans2语言</option>&dollar;
+    <option value="en">EN</option>
+    <option value="zh">ZH</option>
+</select>
+<select onchange="transVer.transDefault.use(this.value)">
+    <option>请选择transDefault语言</option>&dollar;
+    <option value="en">EN</option>
+    <option value="zh">ZH</option>
+</select>
+<h1 style="color: red;">语言一插入转换区域</h1>
+<div id="up" style="border: 1px solid red"></div>
+<script>
+    var transVer = {};
+    window.onload = function () {
+        window.trans = new Translate({
+            default: "zh",
+            namespace: "translate"
+            // dataBinder: 'langdata'
+        });
+
+        trans.translation({
+            "zh": {
+                'a': "第一",
+                'b': {
+                    'b_a': '第二',
+                    'b_b': {
+                        'b_b_a': '第三'
+                    }
+                }
+            },
+            'en': {
+                'a': "first",
+                'b': {
+                    'b_a': 'second',
+                    'b_b': {
+                        'b_b_a': 'third'
+                    }
+                }
+            }
+        }).translation("cn",{
+            'a': "Number One",
+            'b': {
+                'b_a': 'Number two',
+                'b_b': {
+                    'b_b_a': 'Number three'
+                }
+            }
+        });
+
+        transVer['trans2'] = new Translate({
+            default: "en",
+            namespace: "transtwo"
+        })
+        transVer.trans2.translation({
+            "zh": {
+                'a': "@第一",
+                'b': {
+                    'b_a': '@第二',
+                    'b_b': {
+                        'b_b_a': '@第三'
+                    }
+                }
+            },
+            'en': {
+                'a': "@first",
+                'b': {
+                    'b_a': '@second',
+                    'b_b': {
+                        'b_b_a': '@third'
+                    }
+                }
+            }
+        });
+        transVer['transDefault'] = new Translate({
+            default: "en",
+            namespace: "default",
+            windowPath: "trans"
+        })
+        transVer.transDefault.translation({
+            "zh": {
+                'a': "DF@第一",
+                'b': {
+                    'b_a': 'DF@第二',
+                    'b_b': {
+                        'b_b_a': 'DF@第三'
+                    }
+                }
+            },
+            'en': {
+                'a': "DF@first",
+                'b': {
+                    'b_a': 'DF@second',
+                    'b_b': {
+                        'b_b_a': 'DF@third'
+                    }
+                }
+            }
+        });
+    };
+    var insertDom = function () {
+        var up = document.getElementById('up');
+        up.appendChild(trans.domNodes('<div>的减肥了开始建档立卡<h2 translate="a">a</h2>第三方斯蒂芬斯蒂芬<h2 translate="b.b_a">b</h2>第三方爽肤水<h2 translate="b.b_b.b_b_a">c</h2></div>'+'<div><h2 translate="a">a</h2>的说法是电风扇<h2 translate="b.b_a">b</h2><h2 translate="b.b_b.b_b_a">c</h2></div>'));
+    }
+</script>
+</body>
+</html>

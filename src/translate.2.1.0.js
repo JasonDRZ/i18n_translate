@@ -166,11 +166,11 @@
             return Array.prototype.slice.call(parent.querySelectorAll('[' + main.namespace + ']'));
         }
         var registerNodeList = function (TargetNodes) {
-            dataBank.domList.forEach(function (ele,i) {
+            TargetNodes.forEach(function (ele,i) {
                 ele[config.elementRegTag] = true;
-            })
+            });
             //需验证parent是否是合法Node节点
-            __arry__extends(dataBank.domList, TargetNodes, config.elementRegTag);
+            __arry__extends(dataBank.domList, TargetNodes);
         }
         var getNodeFragment = function (str) {
             var frag, range, frame;
@@ -195,6 +195,7 @@
             text = root.document.createTextNode(str);
             return text;
         }
+        //
         var getFragInnerHtmlString = function (frag) {
             var div = root.document.createElement('div');
             div.appendChild(frag);
@@ -223,7 +224,6 @@
                     return true;
                 }
             });
-
             newTargets.forEach(function (ele, i) {
                 //验证当前是否已经注册了语言数据
                 if (dataBank.totalLangData[config.userSetLang]) {

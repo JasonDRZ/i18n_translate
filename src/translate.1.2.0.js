@@ -167,11 +167,11 @@
             return Array.prototype.slice.call(parent.querySelectorAll('[' + main.namespace + ']'));
         }
         var registerNodeList = function (TargetNodes) {
-            dataBank.domList.forEach(function (ele,i) {
+            TargetNodes.forEach(function (ele,i) {
                 ele[config.elementRegTag] = true;
             })
             //需验证parent是否是合法Node节点
-            __arry__extends(dataBank.domList, TargetNodes, config.elementRegTag);
+            __arry__extends(dataBank.domList, TargetNodes);
         }
         var getNodeFragment = function (str) {
             var frag, range, frame;
