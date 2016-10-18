@@ -47,11 +47,11 @@
     window.onload = function () {
         window.trans = new Translate({
             default: "zh",
-            namespace: "translate"
-            // dataBinder: 'langdata'
+            namespace: "translate",
+            scopePath: "trans"
         });
 
-        trans.translation({
+        trans.translation({//传入一个由单个或多个语言Object翻译对象集合
             "zh": {
                 'a': "第一",
                 'b': {
@@ -61,8 +61,8 @@
                     }
                 }
             },
-            'en': {
-                'a': "first",
+            "en": {
+                'a': "fist111",
                 'b': {
                     'b_a': 'second',
                     'b_b': {
@@ -70,19 +70,16 @@
                     }
                 }
             }
-        }).translation("cn",{
-            'a': "Number One",
-            'b': {
-                'b_a': 'Number two',
-                'b_b': {
-                    'b_b_a': 'Number three'
-                }
-            }
-        });
+        })
+                //传入一个由单个或多个语言版本组成的JSON字符串
+                .translation('{"en": {"a": "first", "b": {"b_a": "second", "b_b": {"b_b_a": "third"}}}}')
+                //传入语言对应JSON字符串
+                .translation("cn",'{"a": "Number One","b": {"b_a": "Number two","b_b": {"b_b_a": "Number three"}}}');
 
         transVer['trans2'] = new Translate({
             default: "en",
-            namespace: "transtwo"
+            namespace: "transtwo",
+            scopePath: "transVer.trans2"
         })
         transVer.trans2.translation({
             "zh": {
@@ -107,8 +104,8 @@
         transVer['transDefault'] = new Translate({
             default: "en",
             namespace: "default",
-            windowPath: "trans"
-        })
+            windowScope: transVer.transDefault
+        });
         transVer.transDefault.translation({
             "zh": {
                 'a': "DF@第一",
@@ -132,7 +129,7 @@
     };
     var insertDom = function () {
         var up = document.getElementById('up');
-        up.appendChild(trans.domNodes('<div>的减肥了开始建档立卡<h2 translate="a">a</h2>第三方斯蒂芬斯蒂芬<h2 translate="b.b_a">b</h2>第三方爽肤水<h2 translate="b.b_b.b_b_a">c</h2></div>'+'<div><h2 translate="a">a</h2>的说法是电风扇<h2 translate="b.b_a">b</h2><h2 translate="b.b_b.b_b_a">c</h2></div>'));
+        up.appendChild(trans.nodeString('<div>的减肥了开始建档立卡<h2 translate="a">a</h2>第三方斯蒂芬斯蒂芬<h2 translate="b.b_a">b</h2>第三方爽肤水<h2 translate="b.b_b.b_b_a">c</h2></div>'+'<div><h2 translate="a">a</h2>的说法是电风扇<h2 translate="b.b_a">b</h2><h2 translate="b.b_b.b_b_a">c</h2></div>'));
     }
 </script>
 </body>
