@@ -6,12 +6,12 @@
     <meta name="Keywords" content=""/>
     <!--<meta http-equiv="Pragma" content="no-cache" />-->
     <title translate="b.b_a">Title</title>
-    <script src="../src/translate.2.1.0.js"></script>
+    <script src="../dist/translate.2.1.0.min.js"></script>
 </head>
 <body style="padding: 10px 50px">
 <div translateWrapper="no">
-    <h1 style="color: red;">语言一转换区域</h1>
-    <h1>@{b.b_a | translate}</h1>
+    <h1 style="color: red;" translate="{CSS.H1 | machine}{CSS.H1 | style}">语言一转换区域</h1>
+    <h1 translate="CSS.H2 | style">@{b.b_a | translate}</h1>
     <h1 style="color: red;">语言二转换区域</h1>
     <h1>@{b.b_a | transtwo}</h1>
     <h1>@{b.b_b.b_b_a | transtwo}</h1>
@@ -48,7 +48,7 @@
         window.trans = new Translate({
             default: "zh",
             namespace: "translate",
-            scopePath: "trans"
+            windowPath: "trans"
         });
 
         trans.translation({//传入一个由单个或多个语言Object翻译对象集合
@@ -59,6 +59,10 @@
                     'b_b': {
                         'b_b_a': '第三'
                     }
+                },
+                'CSS': {
+                    'H1': "color: red",
+                    'H2': "color: gray"
                 }
             },
             "en": {
@@ -68,18 +72,21 @@
                     'b_b': {
                         'b_b_a': 'third'
                     }
+                },'CSS': {
+                    'H1': "color: blue",
+                    'H2': "color: yellow"
                 }
             }
         })
                 //传入一个由单个或多个语言版本组成的JSON字符串
                 .translation('{"en": {"a": "first", "b": {"b_a": "second", "b_b": {"b_b_a": "third"}}}}')
                 //传入语言对应JSON字符串
-                .translation("cn",'{"a": "Number One","b": {"b_a": "Number two","b_b": {"b_b_a": "Number three"}}}');
+                .translation("cn",'{"a": "Number One","b": {"b_a": "Number two","b_b": {"b_b_a": "Number three"}},"CSS": {"H1": "color: green", "H2": "color: pink"}}');
 
         transVer['trans2'] = new Translate({
             default: "en",
             namespace: "transtwo",
-            scopePath: "transVer.trans2"
+            windowPath: "transVer.trans2"
         })
         transVer.trans2.translation({
             "zh": {
@@ -89,6 +96,10 @@
                     'b_b': {
                         'b_b_a': '@第三'
                     }
+                },
+                'CSS': {
+                    'H1': "color: red",
+                    'H2': "color: gray"
                 }
             },
             'en': {
@@ -98,13 +109,17 @@
                     'b_b': {
                         'b_b_a': '@third'
                     }
+                },
+                'CSS': {
+                    'H1': "color: blue",
+                    'H2': "color: green"
                 }
             }
         });
         transVer['transDefault'] = new Translate({
             default: "en",
             namespace: "default",
-            windowScope: transVer.transDefault
+            windowPath: 'transVer.transDefault'
         });
         transVer.transDefault.translation({
             "zh": {
@@ -129,7 +144,8 @@
     };
     var insertDom = function () {
         var up = document.getElementById('up');
-        up.appendChild(trans.nodeString('<div>的减肥了开始建档立卡<h2 translate="a">a</h2>第三方斯蒂芬斯蒂芬<h2 translate="b.b_a">b</h2>第三方爽肤水<h2 translate="b.b_b.b_b_a">c</h2></div>'+'<div><h2 translate="a">a</h2>的说法是电风扇<h2 translate="b.b_a">b</h2><h2 translate="b.b_b.b_b_a">c</h2></div>'));
+//        up.appendChild(trans.nodeString('<div>的减肥了开始建档立卡<h2 translate="a">a</h2>第三方斯蒂芬斯蒂芬<h2 translate="b.b_a">b</h2>第三方爽肤水<h2 translate="b.b_b.b_b_a">c</h2></div>'+'<div><h2 translate="a">a</h2>的说法是电风扇<h2 translate="b.b_a">b</h2><h2 translate="b.b_b.b_b_a">c</h2></div>'));
+        up.appendChild(trans.nodeString('<h1>Transtwo: @{b.b_a | transtwo}</h1><h1>Default: @{b.b_a}</h1><div>的减肥了开始建档立卡<h1 transtwo="CSS.H1 | style">水电费水电费了开始对吉林省</h1>第三方斯蒂芬斯蒂芬<h2 translate="b.b_a">b</h2>第三方爽肤水<h3 translate="b.b_b.b_b_a">c</h3></div>'+'<div><h4 translate="a">a</h4>的说法是电风扇<h5 translate="b.b_a">b</h5><span translate="b.b_b.b_b_a">c</span></div>'));
     }
 </script>
 </body>

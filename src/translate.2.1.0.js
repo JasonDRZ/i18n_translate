@@ -49,10 +49,35 @@
         }
     };
 
+
+    /**------------------------**/
+    /**---------简易、扩展方法--------**/
+    /**------------------------**/
+    var _slice = Array.prototype.slice,
+        _filter = Array.prototype.filter;
+    Array.prototype.clean = function(deleteValue) {
+        for (var i = 0; i < this.length; i++) {
+            if (this[i] == deleteValue) {
+                this.splice(i, 1);//返回指定的元素
+                i--;
+            }
+        }
+        return this;
+    };
+
     /**--------------------**/
     /********根域配置*********/
     /**--------------------**/
-
+    var rootConfig = {
+        scopeCamp: {
+            // 'translate': {
+            //     scope: Object,
+            //     scopeString: "trans"
+            // }
+        },//use namespace to be objects tag
+        namespaceCamp: [],
+        namespaceAttributeTag: "translatenamespace",
+    }
 
     /**--------------------**/
     /********函数主体*********/
@@ -90,10 +115,41 @@
         //接口配置
         main.Name = 'Translate';
         main.Version = '1.1.0';
-        main.windowScope = setting.windowScope || root;
-        main.curentLanguage = null;
+        main.windowPath = setting.windowPath || "window";
+        main.currentLanguage = null;
         main.namespace = config.namespace;
         main.defaultNS = 'default';
+        //注册当前域,并检测是否已被注册过
+        if (rootConfig.namespaceCamp.join(",").indexOf(main.namespace) == -1) {
+            __arry__extends(rootConfig.namespaceCamp,[main.namespace]);
+        } else {
+            throw Error ("The namespace ["+main.namespace+"] has already been registered by {"+rootConfig.scopeCamp[main.namespace].scopePath+"},can not be used again!")
+        }
+        //注册windowPath到根域
+        if (main.windowPath && main.windowPath != 'window'){
+            rootConfig.scopeCamp[main.namespace] = {
+                scopePath: main.windowPath,
+            }
+        } else {
+            console.log("The namespace ["+main.namespace+"] has unknown windowPath! So,this can not be referenced by another namespace!")
+        }
+        /**--------------------**/
+        /********根域数据注册*********/
+        /**--------------------**/
+        /**
+         * 通过scopePath配置参数获取已有的翻译构造函数对象
+         * @param path 例如scopePath: 'translator.one',这将对应匹配window对象下的'translator'对象的'one'属性
+         * @returns {*}
+         */
+        var parseScopePath = function (path) {
+            var ar = path.split('.'), space = root;
+            var i = 0;
+            do {
+                space = space[ar[i]];
+                i++;
+            } while (i < ar.length);
+            return space;
+        };
         /**-----------------------------------------**/
                 /*********函数私有方法集*********/
         /**-----------------------------------------**/
@@ -119,48 +175,21 @@
             return observer;
         };
 
-        /**
-         * 通过scopePath配置参数获取已有的翻译构造函数对象
-         * @param path 例如scopePath: 'translator.one',这将对应匹配window对象下的'translator'对象的'one'属性
-         * @returns {*}
-         */
-        var parseScopePath = function (path) {
-            var ar = path.split('.'), space = root;
-            var i = 0;
-            do {
-                space = space[ar[i]];
-                i++;
-            } while (i < ar.length);
-            return space;
-        };
-        /**------------------------**/
-        /**---------简易方法--------**/
-        /**------------------------**/
-        var _slice = Array.prototype.slice,
-            _filter = Array.prototype.filter;
         /**-----------------------------------**/
              /**---------翻译模块--------**/
         /**-----------------------------------**/
         var Modules = {
             commonMethod: {},
-            textTranslator: {},
-            attributeTranslator: {},
-            pluginInterface: {}
+            textController: {},
+            nodesController: {},
+            pluginInterface: {},
+
         };
         /**---------------------------**/
         /**---------公共/主处理模块模块--------**/
         /**---------------------------**/
         __attr__extends(Modules.commonMethod,{
-            /**
-             * 将html node对象转换成html字符串
-             * @param node
-             * @returns {string}
-             */
-            getFragInnerHtmlString: function (node) {
-                var div = root.document.createElement('div');
-                div.appendChild(node);
-                return div.innerHTML;
-            },
+
             /**
              * 按文档域查找目标元素
              * @param queryStr
@@ -172,6 +201,175 @@
                 parent = parent ? parent : root.document;
                 return _slice.call(parent.querySelectorAll(queryStr));
             },
+            translateMachine: function (matchString) {
+                var tmp = main.currentLanguage === null
+                    ? Modules.commonMethod.setCurrentLangData()
+                    : main.currentLanguage,
+                    ak = matchString.split('.');
+                ak.clean("");
+                if (ak.length < 1) {
+                    return "{{Bad Translation!}}";
+                }
+                for (var i = 0; i < ak.length; i++) {
+                    if (tmp[ak[i]]) tmp = tmp[ak[i]];
+                    else {
+                        console.log(tmp)
+                        console.log('没跑气的：'+ak[i])
+                        console.log("[" + matchString + "] 未匹配到目标语言字段，请检查。");
+                        tmp = "{{Bad Translation!}}";
+                        break;
+                    }
+                };
+                return tmp;
+            },
+            switchAttrOrText: function (block,element) {
+                var seg = block.split('|'),
+                    translationText = Modules.commonMethod.translateMachine(seg[0]);
+                if (seg.length > 1) {//用于操作属性值
+                    var attrs = seg,i=0;
+                    //去掉matchString
+                    attrs.shift();
+                    for (;i<attrs.length;i++){
+                        element.setAttribute(attrs[i],translationText);
+                    }
+                } else {//用于替换innerHTML值
+                    element.innerHTML = translationText;
+                }
+            },
+            /**
+             * 通过解析字段获取当前语言数据中对应的值
+             * @param keyStr 解析字符串
+             * @returns {String} 返回查询到的字符串值
+             *
+             * 带支持：插入内容为html和翻译标签时，跨域注册
+             */
+            getTargetTranslation: function (keyStr,element) {
+                keyStr = keyStr.replace(/\s/g,"");
+                var block = keyStr.match(/\{.*?\}/g);
+                if (block){
+                    block.forEach(function (b,i) {
+                        var inblock = b.match(/\{(.+\S?)\}/)[1];
+                        Modules.commonMethod.switchAttrOrText(inblock,element);
+                    })
+                } else {
+                    Modules.commonMethod.switchAttrOrText(keyStr,element);
+                }
+            },
+            /**
+             * 设置并返回当前语言数据
+             * @returns {currentLanguage}
+             */
+            setCurrentLangData: function () {
+                return main.currentLanguage = dataBank.allLanguagesData[config.userSetLanguageTag];
+            },
+            /**
+             * 设置变更语言标识
+             * @param lang
+             * @param cb
+             */
+            setCurrentLang: function (lang, cb) {
+                config.userSetLanguageTag = lang;
+                if (typeof cb == "function") cb();
+            },
+        });
+
+        /**-------------------------------------------**/
+        /**--文本翻译标签转译及文本翻译标签数据替换翻译模块--**/
+        /**--------------------------------------------**/
+
+        __attr__extends(Modules.textController,{
+            /**
+             *
+             * @param rule 内部匹配表达式
+             * @param options 配置参数
+             * @returns {RegExp}
+             */
+            returnTextTagMatchRegExp: function (rule, options) {
+                return new RegExp(config.translateTextTag.begin + rule + config.translateTextTag.end, options)
+            },
+            /**
+             * 获取未注册html字符串转译的文档对象
+             * @param str
+             */
+            stringNodeTranslator: function (str) {
+                //创建新的node文档树
+                var frag = Modules.nodesController.getNodeFragment(str);
+                return frag;
+            },
+            /**
+             * 生成一个带有翻译命名空间属性及字段的'b'标签
+             * @param attrName
+             * @param pathString
+             * @returns {Element}
+             */
+            createBLabel: function (attrName,pathString) {
+                var b = root.document.createElement('b');
+                b.setAttribute(attrName, pathString);
+                b.setAttribute(rootConfig.namespaceAttributeTag,attrName);
+                if (rootConfig.namespaceCamp.join(",").indexOf(attrName) == -1){
+                    console.log("Namespace ["+attrName+"] does not exist!");
+                    b.innerHTML = "{{Not supported by any Translation namespace!}}";
+                }
+                return b;
+            },
+            /**
+             * 支持default namespace,如果namespace被设为default，@{lang}将使用default进行翻译
+             * @param innerHtml
+             * @returns {XML|void|string|*}
+             */
+            matchTextTransSource: function (innerHtml) {
+                return innerHtml.replace(Modules.textController.returnTextTagMatchRegExp('.*?', 'g'), function (e) {
+                    var s = e.match(Modules.textController.returnTextTagMatchRegExp('(.+\S?)')), replacement;
+                    s = s[1].replace(/\s/g, '');
+                    if (s.indexOf('|') != -1) {
+                        var sa = s.split('|');
+                        //支持第一个参数
+                        replacement = Modules.nodesController.getNodeInnerHtmlString(
+                            Modules.textController.createBLabel(sa[1],sa[0])
+                        );
+                    } else {
+                        //默认为当前命名空间
+                        replacement = Modules.nodesController.getNodeInnerHtmlString(
+                            Modules.textController.createBLabel(main.defaultNS,s)
+                        );
+                    }
+                    return replacement;
+                });
+            },
+            /**
+             * 文本替换为'b'标签绑定数据主方法
+             * @param tatgetString 目标转译字符串
+             * @param cb Callback
+             */
+            innerTextCompiler: function (targetString,cb) {
+                if (targetString && targetString != ""){
+                    var repHtml = Modules.textController.matchTextTransSource(targetString);
+                    if (cb && typeof cb == 'function') cb(repHtml);
+                    return repHtml;
+                } else {
+                    var wrappers = Modules.commonMethod.getAllTargetNodes('[' + config.translateWrapper + ']');
+                    wrappers = _filter.call(wrappers,function (ele) {
+                        return !ele[config.translateWrapper];
+                    });
+                    if (wrappers.length < 1) return;
+                    wrappers.forEach(function (ele, i) {
+                        var repHtml = Modules.textController.matchTextTransSource(ele.innerHTML);
+                        ele.innerHTML = "";
+                        ele[config.translateWrapper] = true;
+                        ele.appendChild(Modules.textController.stringNodeTranslator(repHtml));
+                    });
+                    if (cb) cb();
+                    return null;
+                }
+            },
+
+        });
+
+        /**--------------------------------------**/
+        /**-------DOM元素、属性的操作、翻译模块------**/
+        /**--------------------------------------**/
+
+        __attr__extends(Modules.nodesController,{
             /**
              * 将html字符串转换成文档对象
              * @param htmlString
@@ -194,34 +392,24 @@
                 return frag;
             },
             /**
-             * 通过解析字段获取当前语言数据中对应的值
-             * @param keyStr 解析字符串
-             * @returns {String} 返回查询到的字符串值
-             *
-             * 带支持：插入内容为html和翻译标签时，跨域注册
+             * 将html node对象转换成html字符串
+             * @param node
+             * @returns {string}
              */
-            getTargetTranslation: function (keyStr) {
-                keyStr = keyStr.trim();
-                var ak = keyStr.split('.');
-                var tmp = main.curentLanguage === null
-                    ? setCurentLangData()
-                    : main.curentLanguage;
-                for (var i in ak) {
-                    if (tmp[ak[i]]) tmp = tmp[ak[i]];
-                    else {
-                        console.log("[" + keyStr + "] 未匹配到目标语言字段，请检查。");
-                        tmp = "{{Bad Translation!}}";
-                        break;
-                    }
-                };
-                return tmp;
+            getNodeInnerHtmlString: function (node) {
+                var div = root.document.createElement('div');
+                div.appendChild(node);
+                return div.innerHTML;
             },
             /**
              * 查询、翻译并注册DOM元素节点
              * @param range
              */
-            selectTargetToRegTranslater: function (range) {
-                var newTargets = Modules.commonMethod.getAllTargetNodes('[' + main.namespace + ']',range);
+            selectTargetToRegTranslator: function (range) {
+                var newTargets = [];
+                rootConfig.namespaceCamp.forEach(function (n) {
+                    __arry__extends(newTargets,Modules.commonMethod.getAllTargetNodes('[' + n + ']',range));
+                });
                 if (newTargets.length < 1) return;
                 newTargets = newTargets.filter(function (ele) {
                     //去掉已注册过的元素
@@ -231,16 +419,35 @@
                         return true;
                     }
                 });
+                console.log(newTargets)
                 newTargets.forEach(function (ele, i) {
+                    //翻译当前域标签内容
+                    var transSource = ele.getAttribute(main.namespace)
                     //验证当前是否已经注册了语言数据
-                    if (dataBank.allLanguagesData[config.userSetLanguageTag]) {
-                        var transSource = newTargets[i][config.elementLanguagePathKey] = ele.getAttribute(main.namespace);
-                        // ele.removeAttribute(main.namespace);
-                        ele.innerHTML = Modules.commonMethod.getTargetTranslation(transSource);
+                    if (main.currentLanguage && transSource) {
+                        ele[config.elementLanguagePathKey] = transSource;
+                        ele.removeAttribute(main.namespace);
+                        Modules.commonMethod.getTargetTranslation(transSource,ele);
                     }
                 });
+                newTargets = newTargets.filter(function (ele) {
+                    //跨域注册并去掉非当前域的元素
+                    var foreignSpace = [],flag = true;
+                    rootConfig.namespaceCamp.forEach(function (n) {
+                        if (n != main.namespace) foreignSpace.push(n);
+                    });
+                    foreignSpace.forEach(function (n) {
+                        var transSource = ele.getAttribute(n);
+                        if (transSource) {
+                            var foreigner = parseScopePath(rootConfig.scopeCamp[n].scopePath);
+                            foreigner.registerElements(ele);
+                            flag = false;
+                        }
+                    })
+                    return flag;
+                });
                 //注册新的node节点
-                Modules.commonMethod.registerNodeList(newTargets);
+                Modules.nodesController.registerNodeList(newTargets);
             },
             /**
              * 将目标DOM对象注册到当前域中，并标示
@@ -254,108 +461,19 @@
                 __arry__extends(dataBank.nodeRegisteredList, TargetNodes);
             },
             /**
-             * 设置并返回当前语言数据
-             * @returns {curentLanguage}
+             * 独立调用注册翻译机，仅用作外部接口独立调用
+             * @param ele
              */
-            setCurentLangData: function () {
-                return main.curentLanguage = dataBank.allLanguagesData[config.userSetLanguageTag];
+            isolateTranslator: function (ele) {
+                var transSource = ele.getAttribute(main.namespace)
+                if (main.currentLanguage && transSource) {
+                    ele[config.elementLanguagePathKey] = transSource;
+                    console.log(transSource)
+                    ele.removeAttribute(main.namespace);
+                    Modules.commonMethod.getTargetTranslation(transSource,ele);
+                }
+                Modules.nodesController.registerNodeList([ele]);
             },
-            /**
-             * 设置变更语言标识
-             * @param lang
-             * @param cb
-             */
-            setCurentLang: function (lang, cb) {
-                config.userSetLanguageTag = lang;
-                if (typeof cb == "function") cb();
-            },
-        });
-
-        /**-------------------------------------------**/
-        /**--文本翻译标签转译及文本翻译标签数据替换翻译模块--**/
-        /**--------------------------------------------**/
-
-        __attr__extends(Modules.textTranslator,{
-            /**
-             *
-             * @param rule 内部匹配表达式
-             * @param options 配置参数
-             * @returns {RegExp}
-             */
-            returnTextTagMatchRegExp: function (rule, options) {
-                return new RegExp(config.translateTextTag.begin + rule + config.translateTextTag.end, options)
-            },
-            /**
-             * 获取未注册html字符串转译的文档对象
-             * @param str
-             */
-            stringNodeTranslater: function (str) {
-                //创建新的node文档树
-                var frag = Modules.commonMethod.getNodeFragment(str);
-                return frag;
-            },
-            /**
-             * 生成一个带有翻译命名空间属性及字段的'b'标签
-             * @param attrName
-             * @param pathString
-             * @returns {Element}
-             */
-            createBLabel: function (attrName,pathString) {
-                var b = root.document.createElement('b');
-                b.setAttribute(attrName, pathString);
-                return b;
-            },
-            /**
-             * 支持default namespace,如果namespace被设为default，@{lang}将使用default进行翻译
-             * @param innerHtml
-             * @returns {XML|void|string|*}
-             */
-            matchTextTransSource: function (innerHtml) {
-                return innerHtml.replace(Modules.textTranslator.returnTextTagMatchRegExp('.*?', 'g'), function (e) {
-                    var s = e.match(Modules.textTranslator.returnTextTagMatchRegExp('(.+\S?)')), replacement;
-                    s = s[1].replace(/\s/g, '');
-                    if (s.indexOf('|') != -1) {
-                        var sa = s.split('|');
-                        replacement = Modules.commonMethod.getFragInnerHtmlString(
-                            Modules.textTranslator.createBLabel(sa[1],sa[0])
-                        );
-                    } else {
-                        //默认为当前命名空间
-                        replacement = Modules.commonMethod.getFragInnerHtmlString(
-                            Modules.textTranslator.createBLabel(main.defaultNS,s)
-                        );
-                    }
-                    return replacement;
-                });
-            },
-            /**
-             * 文本替换为'b'标签绑定数据主方法
-             * @param cb Callback
-             */
-            innerTextCompiler: function (cb) {
-                var wrappers = root.document.querySelectorAll('[' + config.translateWrapper + ']');
-                wrappers = _filter.call(wrappers,function (ele) {
-                    return !ele[config.translateWrapper];
-                });
-                if (wrappers.length < 1) return;
-                wrappers.forEach(function (ele, i) {
-                    var repHtml = Modules.textTranslator.matchTextTransSource(ele.innerHTML);
-                    ele.innerHTML = "";
-                    ele[config.translateWrapper] = true;
-                    ele.appendChild(Modules.textTranslator.stringNodeTranslater(repHtml));
-                });
-                if (cb) cb();
-            }
-        });
-
-        /**---------------------------**/
-        /**-------标签属性翻译模块------**/
-        /**---------------------------**/
-
-        __attr__extends(Modules.attributeTranslator,{
-
-
-
         })
 
         /**---------------------------**/
@@ -375,10 +493,11 @@
              * html字符串解析API调用函数
              * @param str
              */
-            stringselectTargetToRegTranslater: function (str) {
+            stringSelectTargetToRegTranslator: function (str) {
                 //创建新的node文档树
-                var frag = Modules.commonMethod.getNodeFragment(str);
-                Modules.commonMethod.selectTargetToRegTranslater(frag);
+                var transStr = Modules.textController.innerTextCompiler(str),
+                    frag = Modules.nodesController.getNodeFragment(transStr);
+                Modules.nodesController.selectTargetToRegTranslator(frag);
                 return frag;
             },
             /**
@@ -416,24 +535,28 @@
                 for (var l in dataBank.allLanguagesData) dataBank.allLanguagesMarks.push(l);
                 if (cb) cb();
             },
-            switchTranslater: function (lang) {
+            switchTranslator: function (lang) {
                 lang = lang.trim();
-                Modules.commonMethod.setCurentLang(lang, Modules.commonMethod.setCurentLangData);
+                Modules.commonMethod.setCurrentLang(lang, Modules.commonMethod.setCurrentLangData);
                 //翻译每个需要翻译的DOM元素内容
                 dataBank.nodeRegisteredList.forEach(function (ele, i) {
                     var transSource = dataBank.nodeRegisteredList[i][config.elementLanguagePathKey];
+                    Modules.commonMethod.getTargetTranslation(transSource,ele);
                     console.log(ele);
-                    console.log(transSource)
-                    ele.innerHTML = Modules.commonMethod.getTargetTranslation(transSource);
-                    console.log(ele);
-
                 })
             },
-            initTranslater: function () {
+            initTranslator: function () {
                 //设置当前语言
-                Modules.commonMethod.setCurentLangData();
-                Modules.commonMethod.selectTargetToRegTranslater(document);
+                Modules.commonMethod.setCurrentLangData();
+                Modules.nodesController.selectTargetToRegTranslator(document);
             },
+            /**
+             * 跨域调用接口
+             * @param node element
+             */
+            foreignTranslator: function (node) {
+                Modules.nodesController.isolateTranslator(node);
+            }
         })
 
 
@@ -452,7 +575,7 @@
             if (arguments.length < 1) return main;
             var argus = arguments;
             //初始化函数
-            Modules.pluginInterface.registerLanguages(argus, Modules.pluginInterface.initTranslater);
+            Modules.pluginInterface.registerLanguages(argus, Modules.pluginInterface.initTranslator);
             return main;
         };
         /**
@@ -471,7 +594,7 @@
                 return;
             }
             //调用内部方法
-            Modules.pluginInterface.switchTranslater(languageTag);
+            Modules.pluginInterface.switchTranslator(languageTag);
         };
         /**
          * 此方法允许传入字符串或是html字符串，将返回绑定了语言的新的Node对象
@@ -479,12 +602,16 @@
          * ！**注意**！：请不要将返回的Node对象转换成字符串添加到DOM结构中，这样会造成数据绑定失败！！！！！
          */
         main.nodeString = function (htmlString) {//返回
-            return Modules.pluginInterface.stringselectTargetToRegTranslater(htmlString);
+            return Modules.pluginInterface.stringSelectTargetToRegTranslator(htmlString);
+        };
+        
+        main.registerElements = function (element) {
+            Modules.pluginInterface.foreignTranslator(element);
         };
         //插件初始化//启动初始化函数
         (function () {
             //初始化编译所有翻译标签
-            Modules.textTranslator.innerTextCompiler();
+            Modules.textController.innerTextCompiler();
         })()
 
 
@@ -495,16 +622,25 @@
          * 用于获取当前域所有已注册的语言及数据
          * @returns {dataBank.allLanguagesData|{}}
          */
-        main.getAllLanguages = function () {
-            return dataBank.allLanguagesData;
-        };
-        /**
-         * 用于获取当前域所有已注册的DOM元素
-         * @returns {Array}
-         */
-        main.getElementRegistered = function () {
-            return dataBank.nodeRegisteredList;
-        }
+        // main.getAllLanguages = function () {
+        //     return dataBank.allLanguagesData;
+        // };
+        // /**
+        //  * 用于获取当前域所有已注册的DOM元素
+        //  * @returns {Array}
+        //  */
+        // main.getElementRegistered = function () {
+        //     return dataBank.nodeRegisteredList;
+        // }
+        // main.getRootConfig = function () {
+        //     return rootConfig;
+        // }
+        // main.getScope = function () {
+        //     return parseScopePath(main.windowPath);
+        // }
+
+
+
         return main;
     };
     //expand prototype
