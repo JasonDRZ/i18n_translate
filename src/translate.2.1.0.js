@@ -535,6 +535,10 @@
                 for (var l in dataBank.allLanguagesData) dataBank.allLanguagesMarks.push(l);
                 if (cb) cb();
             },
+            /**
+             * 使用中切换语言
+             * @param lang
+             */
             switchTranslator: function (lang) {
                 lang = lang.trim();
                 Modules.commonMethod.setCurrentLang(lang, Modules.commonMethod.setCurrentLangData);
@@ -545,10 +549,13 @@
                     console.log(ele);
                 })
             },
+            /**
+             * 初始化翻译处理
+             */
             initTranslator: function () {
                 //设置当前语言
                 Modules.commonMethod.setCurrentLangData();
-                Modules.nodesController.selectTargetToRegTranslator(document);
+                Modules.nodesController.selectTargetToRegTranslator();
             },
             /**
              * 跨域调用接口
