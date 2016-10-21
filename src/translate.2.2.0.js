@@ -54,6 +54,33 @@
     /**------------------------**/
     /**---------简易、扩展方法--------**/
     /**------------------------**/
+    // 解决办法，以filter为例，自己写一个filter
+    if (!Array.prototype.filter) {
+        Array.prototype.filter = function(fun){
+            var len = this.length;
+            if (typeof fun != "function"){
+                throw new TypeError();
+            }
+            var res = new Array();
+            var parent = arguments[1];
+            for (var i = 0; i < len; i++){
+                if (i in this){
+                    var val = this[i]; // in case fun mutates this
+                    if (fun.call(parent, val, i, this)) {
+                        res.push(val);
+                    }
+                }
+            }
+            return res;
+        };
+    }
+    if (!Array.prototype.forEach) {
+        Array.prototype.forEach = function (call) {
+            var len = this.length,i=0;
+            for (;i<len;(call(this[i],i)),i++);
+        }
+    }
+    //添加捷径
     var _slice = Array.prototype.slice,
         _filter = Array.prototype.filter;
     //删除数组中指定值的元素
@@ -65,6 +92,33 @@
             }
         }
         return this;
+    };
+    //用于提供IE对querySelectorAll和querySelector的支持
+    if (!root.document.querySelectorAll) {
+        root.document.querySelectorAll = function (selectors) {
+            var style = root.document.createElement('style'), elements = [], element;
+            root.document.documentElement.firstChild.appendChild(style);
+            root.document._qsa = [];
+
+            style.styleSheet.cssText = selectors + '{x-qsa:expression(document._qsa && document._qsa.push(this))}';
+            window.scrollBy(0, 0);
+            style.parentNode.removeChild(style);
+
+            while (root.document._qsa.length) {
+                element = root.document._qsa.shift();
+                element.style.removeAttribute('x-qsa');
+                elements.push(element);
+            }
+            root.document._qsa = null;
+            return elements;
+        };
+    };
+
+    if (!root.document.querySelector) {
+        root.document.querySelector = function (selectors) {
+            var elements = root.document.querySelectorAll(selectors);
+            return (elements.length) ? elements[0] : null;
+        };
     };
 
     /**--------------------**/
@@ -78,47 +132,50 @@
             //     scopeString: "trans"
             // }
         },//use namespace to be objects tag
+        scopesContainer: {//用于存储所有注册的插件调用栈
+            //'namespace': 'namespace Object'
+        },
         namespaceCamp: [],
-        namespaceAttributeTag: "translatenamespace",
-    }
+        namespaceAttributeTag: "translatenamespace"
+    };
 
     /**--------------------**/
     /********函数主体*********/
     /**--------------------**/
-    var i18n = function (setting) {
+    var i18n = function (TSetting) {
         var main = this;
         /**
          * 检测实例化条件是否满足
          */
-        if (!setting || (setting && !setting.default) || (setting && !setting.namespace)) {
+        if (!TSetting || (TSetting && !TSetting["default"]) || (TSetting && !TSetting["namespace"])) {
             throw Error("You must config 'Translate' at least two of Attrs {default: String,namespace: String} in your project.");
             return;
-        } else if (!main instanceof i18n) return new i18n(setting);
+        } else if (!main instanceof i18n) return new i18n(TSetting);
         /**--------------------**/
         /********功能配置*********/
         /**--------------------**/
 
         //插件配置
         var config = {
-            namespace: setting.namespace,//用来标示当前Translation实例化之后赋值的对象，须从window下的对象开始
-            userSetLanguageTag: setting.default,
-            elementLanguagePathKey: 'languageMatcher',//用来二次存取每个翻译Dom属性中的的原始翻译字段
-            elementRegisteredTagName: 'translationRegistered',
+            namespace: TSetting["namespace"],//用来标示当前Translation实例化之后赋值的对象，须从window下的对象开始
+            userSetLanguageTag: TSetting["default"],
+            elementMatchTagHead: 'TransMatch_',//用来二次存取每个翻译Dom属性中的的原始翻译字段
+            elementRegisteredTagHead: 'TransRegistered_',
             translateTextTag: {'begin': '@{', 'end': '}'},
-            translateWrapper: 'translateWrapper',//指定需要进行innerText翻译的区域
+            translateWrapper: 'translateWrapper'//指定需要进行innerText翻译的区域
         };
 
         //创建内存缓存库
         var dataBank = {
             allLanguagesData: {},//当前域中所有已注册的语言数据
             allLanguagesMarks: [],//存储所有已注册的的语言标识
-            nodeRegisteredList: [],//存储所有生成注册的DOM元素
+            nodeRegisteredList: []//存储所有生成注册的DOM元素
         };
 
         //接口配置
         main.Name = 'Translate';
         main.Version = '1.1.0';
-        main.windowPath = setting.windowPath || "window";
+        main.windowPath = TSetting.windowPath || "window";
         main.currentLanguage = null;
         main.namespace = config.namespace;
         main.defaultNS = 'default';
@@ -127,15 +184,15 @@
             __arry__extends(rootConfig.namespaceCamp,[main.namespace]);
         } else {
             throw Error ("The namespace ["+main.namespace+"] has already been registered by {"+rootConfig.scopeCamp[main.namespace].scopePath+"},can not be used again!")
-        }
+        };
         //注册windowPath到根域
         if (main.windowPath && main.windowPath != 'window'){
             rootConfig.scopeCamp[main.namespace] = {
-                scopePath: main.windowPath,
+                scopePath: main.windowPath
             }
         } else {
             console.log("The namespace ["+main.namespace+"] has unknown windowPath! So,this can not be referenced by another namespace!")
-        }
+        };
         /**--------------------**/
         /********根域数据注册*********/
         /**--------------------**/
@@ -186,8 +243,7 @@
             commonMethod: {},
             textController: {},
             nodesController: {},
-            pluginInterface: {},
-
+            pluginInterface: {}
         };
         /**---------------------------**/
         /**---------公共/主处理模块模块--------**/
@@ -275,7 +331,7 @@
             setCurrentLang: function (lang, cb) {
                 config.userSetLanguageTag = lang;
                 if (typeof cb == "function") cb();
-            },
+            }
         });
 
         /**-------------------------------------------**/
@@ -353,6 +409,7 @@
                     return repHtml;
                 } else {
                     var wrappers = Modules.commonMethod.getAllTargetNodes('[' + config.translateWrapper + ']');
+                    console.log(_filter)
                     wrappers = _filter.call(wrappers,function (ele) {
                         return !ele[config.translateWrapper];
                     });
@@ -366,7 +423,7 @@
                     if (cb) cb();
                     return null;
                 }
-            },
+            }
 
         });
 
@@ -418,7 +475,7 @@
                 if (newTargets.length < 1) return;
                 newTargets = newTargets.filter(function (ele) {
                     //去掉已注册过的元素
-                    if (ele[config.elementRegisteredTagName]) {
+                    if (ele[config.elementRegisteredTagHead + main.namespace]) {
                         return false;
                     } else {
                         return true;
@@ -430,7 +487,7 @@
                     var transSource = ele.getAttribute(main.namespace)
                     //验证当前是否已经注册了语言数据
                     if (main.currentLanguage && transSource) {
-                        ele[config.elementLanguagePathKey] = transSource;
+                        ele[config.elementMatchTagHead + main.namespace] = transSource;
                         ele.removeAttribute(main.namespace);
                         Modules.commonMethod.getTargetTranslation(transSource,ele);
                     }
@@ -441,10 +498,10 @@
                     rootConfig.namespaceCamp.forEach(function (n) {
                         if (n != main.namespace) foreignSpace.push(n);
                     });
-                    foreignSpace.forEach(function (n) {
-                        var transSource = ele.getAttribute(n);
+                    foreignSpace.forEach(function (ns) {
+                        var transSource = ele.getAttribute(ns);
                         if (transSource) {
-                            var foreigner = parseScopePath(rootConfig.scopeCamp[n].scopePath);
+                            var foreigner = rootConfig.scopesContainer[ns];
                             foreigner.registerElements(ele);
                             flag = false;
                         }
@@ -460,7 +517,7 @@
              */
             registerNodeList: function (TargetNodes) {
                 TargetNodes.forEach(function (ele,i) {
-                    ele[config.elementRegisteredTagName] = true;
+                    ele[config.elementRegisteredTagHead + main.namespace] = true;
                 });
                 //需验证parent是否是合法Node节点
                 __arry__extends(dataBank.nodeRegisteredList, TargetNodes);
@@ -472,14 +529,14 @@
             isolateTranslator: function (ele) {
                 var transSource = ele.getAttribute(main.namespace)
                 if (main.currentLanguage && transSource) {
-                    ele[config.elementLanguagePathKey] = transSource;
+                    ele[config.elementMatchTagHead + main.namespace] = transSource;
                     console.log(transSource)
                     ele.removeAttribute(main.namespace);
                     Modules.commonMethod.getTargetTranslation(transSource,ele);
                 }
                 Modules.nodesController.registerNodeList([ele]);
-            },
-        })
+            }
+        });
 
         /**---------------------------**/
         /**-------API调用模块------**/
@@ -549,7 +606,7 @@
                 Modules.commonMethod.setCurrentLang(lang, Modules.commonMethod.setCurrentLangData);
                 //翻译每个需要翻译的DOM元素内容
                 dataBank.nodeRegisteredList.forEach(function (ele, i) {
-                    var transSource = dataBank.nodeRegisteredList[i][config.elementLanguagePathKey];
+                    var transSource = dataBank.nodeRegisteredList[i][config.elementMatchTagHead + main.namespace];
                     Modules.commonMethod.getTargetTranslation(transSource,ele);
                     console.log(ele);
                 })
@@ -568,12 +625,13 @@
              */
             foreignTranslator: function (node) {
                 Modules.nodesController.isolateTranslator(node);
-            },
-            resetRootScope: function (obj) {
-                rootConfig
             }
-        })
+        });
 
+
+        //插件初始化//启动初始化函数
+        //初始化编译所有翻译标签
+        Modules.textController.innerTextCompiler();
 
         /**------------------------------------------------**/
         /*********************插件正式接口*********************/
@@ -597,7 +655,7 @@
          * //此方法用户切换语言
          * @param languageTag {String}传入要切换的语言标识
          */
-        main.use = function (languageTag) {
+        main.switch = function (languageTag) {
             if (typeof languageTag != "string" || (languageTag && languageTag.trim() == "")) {
                 throw Error("To Translate 'use' function parameter must be a string！");
                 return;
@@ -629,12 +687,6 @@
         main.setRootScope = function (object) {
 
         }
-        //插件初始化//启动初始化函数
-        (function () {
-            //初始化编译所有翻译标签
-            Modules.textController.innerTextCompiler();
-        })()
-
 
         /**--------------------**/
         /********测试接口*********/
@@ -668,8 +720,38 @@
     // i18n.prototype = {
     //     constructor: i18n,
     // };
+    //注册作用域
+    var registerNewScopeFunc = function (NI,CF) {
+        var tmp = {};
+        tmp[CF.namespace] = NI;
+        //注册当前新的翻译作用域
+        __attr__extends(rootConfig.scopesContainer,tmp);
+    }
+    //获取已注册作用域
+    var useRegisteredNamespace = function (NS) {
+        return rootConfig.scopesContainer[NS] ? rootConfig.scopesContainer[NS] : null;
+    }
+    //创建新的翻译作用域，并对新创建的作用域进行注册
+    // var createNewI18n = function (config) {
+    //     var newI18n = new i18n(config);
+    //     registerNewScopeFunc(newI18n,config);
+    //     return newI18n;
+    // }
+    //抛出全局接口
+    var methods = {
+        //创建新的翻译域
+        create: function (config) {
+            var newI18n = new i18n(config);
+            registerNewScopeFunc(newI18n,config);
+            return newI18n;
+        },
+        //使用已注册的翻译域
+        use: function (namespace) {
+            return useRegisteredNamespace(namespace);
+        }
+    }
 
-    return i18n;
+    return methods;
 })
 
 

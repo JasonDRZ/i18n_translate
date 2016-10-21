@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="Description" content="">
     <meta name="Keywords" content=""/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <!--<meta http-equiv="Pragma" content="no-cache" />-->
     <title translate="b.b_a">Title</title>
-    <script src="../dist/translate.2.1.0.min.js"></script>
+    <!--<script src="../dist/translate.2.2.0.min.js"></script>-->
+    <script src="../src/translate.2.2.0.js"></script>
 </head>
 <body style="padding: 10px 50px">
 <div translateWrapper="no">
@@ -24,34 +26,31 @@
 <h2 translate="b.b_a"></h2>
 <h2 translate="b.b_b.b_b_a"></h2>
 <button type="button" onclick="insertDom()">插入新的元素</button>
-<select onchange="trans.use(this.value)">
+<select onchange="trans.switch(this.value)">
     <option>请选择trans语言</option>&dollar;
     <option value="en">EN</option>
     <option value="zh">ZH</option>
     <option value="cn">CN</option>
 </select>
-<select onchange="transVer.trans2.use(this.value)">
+<select onchange="transVer.trans2.switch(this.value)">
     <option>请选择trans2语言</option>&dollar;
     <option value="en">EN</option>
     <option value="zh">ZH</option>
 </select>
-<select onchange="transVer.transDefault.use(this.value)">
+<select onchange="transVer.transDefault.switch(this.value)">
     <option>请选择transDefault语言</option>&dollar;
     <option value="en">EN</option>
     <option value="zh">ZH</option>
 </select>
 <h1 style="color: red;">语言一插入转换区域</h1>
 <div id="up" style="border: 1px solid red"></div>
-<script>
+<script type="text/javascript">
     var transVer = {};
     window.onload = function () {
-        window.trans = new Translate({
-            default: "zh",
-            namespace: "translate",
-            windowPath: "trans"
-        });
-
-        trans.translation({//传入一个由单个或多个语言Object翻译对象集合
+        window.trans = Translate.create({
+            "default": "zh",
+            "namespace": "translate"
+        }).translation({//传入一个由单个或多个语言Object翻译对象集合
             "zh": {
                 'a': "第一",
                 'b': {
@@ -83,12 +82,10 @@
                 //传入语言对应JSON字符串
                 .translation("cn",'{"a": "Number One","b": {"b_a": "Number two","b_b": {"b_b_a": "Number three"}},"CSS": {"H1": "color: green", "H2": "color: pink"}}');
 
-        transVer['trans2'] = new Translate({
-            default: "en",
-            namespace: "transtwo",
-            windowPath: "transVer.trans2"
-        })
-        transVer.trans2.translation({
+        transVer['trans2'] = Translate.create({
+            "default": "en",
+            "namespace": "transtwo"
+        }).translation({
             "zh": {
                 'a': "@第一",
                 'b': {
@@ -116,12 +113,10 @@
                 }
             }
         });
-        transVer['transDefault'] = new Translate({
-            default: "en",
-            namespace: "default",
-            windowPath: 'transVer.transDefault'
-        });
-        transVer.transDefault.translation({
+        transVer['transDefault'] = Translate.create({
+            "default": "en",
+            "namespace": "default"
+        }).translation({
             "zh": {
                 'a': "DF@第一",
                 'b': {
@@ -145,7 +140,7 @@
     var insertDom = function () {
         var up = document.getElementById('up');
 //        up.appendChild(trans.nodeString('<div>的减肥了开始建档立卡<h2 translate="a">a</h2>第三方斯蒂芬斯蒂芬<h2 translate="b.b_a">b</h2>第三方爽肤水<h2 translate="b.b_b.b_b_a">c</h2></div>'+'<div><h2 translate="a">a</h2>的说法是电风扇<h2 translate="b.b_a">b</h2><h2 translate="b.b_b.b_b_a">c</h2></div>'));
-        up.appendChild(trans.nodeString('<h1>Transtwo: @{b.b_a | transtwo}</h1><h1>Default: @{b.b_a}</h1><div>的减肥了开始建档立卡<h1 transtwo="CSS.H1 | style">水电费水电费了开始对吉林省</h1>第三方斯蒂芬斯蒂芬<h2 translate="b.b_a">b</h2>第三方爽肤水<h3 translate="b.b_b.b_b_a">c</h3></div>'+'<div><h4 translate="a">a</h4>的说法是电风扇<h5 translate="b.b_a">b</h5><span translate="b.b_b.b_b_a">c</span></div>'));
+        up.appendChild(trans.nodeString('<h1>Transtwo: @{b.b_a | transtwo}</h1><h1>Default: @{b.b_a}</h1><div>的减肥了开始建档立卡<h1 transtwo="CSS.H1 | style" translate="CSS.H1 | title">水电费水电费了开始对吉林省</h1>第三方斯蒂芬斯蒂芬<h2 translate="b.b_a">b</h2>第三方爽肤水<h3 translate="b.b_b.b_b_a">c</h3></div>'+'<div><h4 translate="a">a</h4>的说法是电风扇<h5 translate="b.b_a">b</h5><span translate="b.b_b.b_b_a">c</span></div>'));
     }
 </script>
 </body>
