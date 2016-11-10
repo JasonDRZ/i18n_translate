@@ -5,7 +5,7 @@ const gulp = require('gulp');
 const loadPlugins = require('gulp-load-plugins');
 
 const $ = loadPlugins();
-gulp.task("build",()=>{
+gulp.task("default",()=>{
     gulp.src('src/*.js')
         .pipe($.uglify({
             compress: true

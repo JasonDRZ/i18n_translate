@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="Description" content="">
+    <meta name="Keywords" content=""/>
+    <!--<meta http-equiv="Pragma" content="no-cache" />-->
+    <title>Title</title>
+    <link href='../example/bootsrap.min.css' rel="stylesheet"/>
+    <link rel="stylesheet" href="http://v3.bootcss.com/assets/css/docs.min.css">
+    <script src='../src/translate.2.2.3.js' type='text/javascript'></script>
+</head>
+<body>
+    <div class="container-fluid" style="padding: 15px">
+        <h3>i18n-translate  <span class="label label-success">Demo 1.0</span></h3>
+        <div class="row">
+            <div class="col-xs-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <span class="panel-title">单个属性命名空间切换</span>
+                        <div class="pull-right">
+                            ONE:
+                            <select onchange="namespace_one.switch(this.value)">
+                                <option value="en">英文</option>
+                                <option value="cn">中文</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="highlight">
+                            在元素中添加以 <b class="text-warning">"i18n-"</b> 开始的属性，后跟命名空间名称（如下：i18n-namespace-one）。
+                            <br><br>
+                            属性值为翻译数据的keymap(如："BOOK_ONE.NAME" 标示对应语言版本翻译数据 'BOOK_ONE'的下级属性'NAME'的值)。
+                            <br><br>
+                            如果根据keymap没有查询到对应的翻译数据值，最终将以'{{Bad Translation!}}'提示替代。
+                            <br><br>
+                            实例：
+                            <pre><code class="html"><span class="nt">&lt;h3</span> <span class="na">i18n-namespace-one=</span><span class="s">"BOOK_ONE.NAME"</span><span class="nt">&gt;</span><span class="nt">&lt;/h3&gt;</span>
+或
+<span class="nt">&lt;h3</span> <span class="na">i18n-namespace-one=</span><span class="s">"BOOK_ONE.NAME | html"</span><span class="nt">&gt;</span><span class="nt">&lt;/h3&gt;</span></code></pre>
+                        </div>
+                        <h3 i18n-namespace-one="BOOK_ONE.NAME | html"></h3>
+                        <h3 i18n-namespace-one="BOOK_ONE.NAME"></h3>
+                        <h3 i18n-namespace-one="BOOK_ONE.NAME.q"></h3>
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <span class="panel-title">多域文本标签翻译支持</span>
+                        <div class="pull-right">
+                            ONE:
+                            <select onchange="namespace_one.switch(this.value)">
+                                <option value="cn">中文</option>
+                                <option value="en">英文</option>
+                            </select>
+                            TWO:
+                            <select onchange="namespace_two.switch(this.value)">
+                                <option value="cn">中文</option>
+                                <option value="en">英文</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="highlight">
+                            这个实例允许使用 <b class="text-warning">@{}</b> 文本标签作为翻译表达式，不过文本标签仅在有 <b class="text-warning">multi-translation</b> 标签包裹的内部才起作用。
+                            <br>
+                            在 <b class="text-warning">multi-translation</b> 包裹内部可以存在多个转换域
+                            <br>
+                            <p class="alert alert-success">@{}的语法为@{keymap | namespace}</p>
+                            实例：
+                            <pre><code class="html">
+<span class="nt">&lt;multi-translation</span><span class="nt">&gt;</span>
+    @{BOOK_ONE.NAME | namespace-two}
+    @{BOOK_TWO.NAME | namespace-one}
+    <span class="nt">&lt;b</span> <span class="na">i18n-namespace-two=</span><span class="s">"BOOK_ONE.NAME"</span><span class="nt">&gt;</span><span class="nt">&lt;/b&gt;</span>
+    <span class="nt">&lt;span</span> <span class="na">i18n-namespace-two=</span><span class="s">"BOOK_ONE.VERSION | HTMl,BOOK_ONE.VCLASS|class"</span><span class="nt">&gt;</span><span class="nt">&lt;/span&gt;</span>
+    <span class="nt">&lt;span</span> <span class="na">i18n-namespace-two=</span><span class="s">"{BOOK_ONE.VERSION | HTMl}{BOOK_ONE.VCLASS|class}"</span><span class="nt">&gt;</span><span class="nt">&lt;/span&gt;</span>
+<span class="nt">&lt;/multi-translation&gt;</span></code></pre>
+                        </div>
+                        <multi-translation>
+                            <h3 i18n-namespace-two="BOOK_ONE.NCLASS | class">
+                                @{BOOK_ONE.NAME | namespace-two}
+                                <span i18n-namespace-two="BOOK_ONE.VCLASS | class">@{BOOK_ONE.VERSION | namespace-two}</span>
+                            </h3>
+                            <h3 i18n-namespace-one="BOOK_TWO.NCLASS | class">
+                                @{BOOK_TWO.NAME | namespace-one}
+                                <span i18n-namespace-one="BOOK_TWO.VCLASS | class">@{BOOK_TWO.VERSION | namespace-two}</span>
+                            </h3>
+                            <h3 i18n-namespace-one="BOOK_TWO.NCLASS | class">
+                                @{BOOK_TWO.NAME | namespace-one}
+                                <span i18n-namespace-one="BOOK_TWO.VCLASS | class">@{BOOK_TWO.VERSION | namespace-two}</span>
+                                @{BOOK_ONE.NAME | namespace-two}
+                                <span i18n-namespace-two="BOOK_ONE.VCLASS | class">@{BOOK_ONE.VERSION | namespace-two}</span>
+                            </h3>
+                            <<@{BOOK_TWO.NAME | namespace-one}>> ; <<@{BOOK_ONE.NAME | namespace-two}>>
+                        </multi-translation>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xs-6">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <span class="panel-title">翻译嵌套</span>
+                        <div class="pull-right">
+                            TWO:
+                            <select onchange="namespace_two.switch(this.value)">
+                                <option value="cn">中文</option>
+                                <option value="en">英文</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="highlight">
+                            对目标元素内嵌目标元素的解决方案如下，若顶级元素也为被翻译目标元素，请务必给顶级元素指定翻译修改的目标属性，且属性不能为 html 或 HTML；否则顶级元素内的所有元素都将被翻译字符覆盖。
+                            <p class="alert alert-success">注意：指明修改的目标属性的字段不区分大小写，如"BOOK_ONE.NCLASS | class" 也可写成 "BOOK_ONE.NCLASS | CLASS"；</p>
+                            实例：
+                            <pre><code class="html">
+<span class="nt">&lt;h3</span> <span class="na">i18n-namespace-two=</span><span class="s">"BOOK_ONE.NCLASS | class"</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;b</span> <span class="na">i18n-namespace-two=</span><span class="s">"BOOK_ONE.NAME"</span><span class="nt">&gt;</span><span class="nt">&lt;/b&gt;</span>
+    可在同一个属性值中控制不同的属性，每一块用"{}"包围或是使用英文","隔开均可
+    <span class="nt">&lt;span</span> <span class="na">i18n-namespace-two=</span><span class="s">"BOOK_ONE.VERSION | HTMl,BOOK_ONE.VCLASS|class"</span><span class="nt">&gt;</span><span class="nt">&lt;/span&gt;</span>
+    或
+    <span class="nt">&lt;span</span> <span class="na">i18n-namespace-two=</span><span class="s">"{BOOK_ONE.VERSION | HTMl}{BOOK_ONE.VCLASS|class}"</span><span class="nt">&gt;</span><span class="nt">&lt;/span&gt;</span>
+<span class="nt">&lt;/h3&gt;</span></code></pre>
+                        </div>
+                        <h3 i18n-namespace-two="BOOK_ONE.NCLASS | class">
+                            <b i18n-namespace-two="BOOK_ONE.NAME"></b>
+                            <span i18n-namespace-two="BOOK_ONE.VERSION,BOOK_ONE.VCLASS | class">New</span>
+                        </h3>
+                    </div>
+                </div>
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <span class="panel-title">动态插入标签翻译支持</span>
+                        <div class="pull-right">
+                            ONE:
+                            <select onchange="Translate.use('namespace-one').switch(this.value)">
+                                <option value="cn">中文</option>
+                                <option value="en">英文</option>
+                            </select>
+                            TWO:
+                            <select onchange="Translate.use('namespace-two').switch(this.value)">
+                                <option value="cn">中文</option>
+                                <option value="en">英文</option>
+                            </select>
+                            <button onclick="insertDom()" type="button" class="btn btn-sm btn-info">插入</button>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="highlight">
+                            你可以通过 <b class="text-warning">nodeString()</b> 接口插入一个或多个DOM元素，插入的DOM元素对象同样能够支持动态翻译切换。
+
+                            <br>
+                            字符串中你可以同时推元素标签使用属性方式 "i18n-namespace" 和文本标签形式 "@{}" 添加翻译字符串。
+                            <br>
+                            不过两种不同类型的翻译标签的使用需要遵循前面实例的原则。
+                            <p class="alert alert-danger">"@{}" 不能放入元素标签内部使用,'&lt;h2 @{a.b | namespace}&gt;&lt;/h2&gt;' 是错误的用法！</p>
+                            实例：
+                            <pre><code class="html">
+<span class="nt">&rdquo;&lt;h3</span><span class="nt"><span class="na"> i18n-namespace-two=</span><span class="s">"BOOK_ONE.NAME"</span>&gt;<span class="nt">&lt;/h3&gt;</span>&rdquo;+</span>
+<span class="nt">&rdquo;@{BOOK_TWO.NAME | namespace-one}&rdquo;+</span>
+<span class="nt">&rdquo;&lt;h3</span><span class="nt"><span class="na"> i18n-namespace-two=</span><span class="s">"BOOK_TWO.NCLASS | class"</span><span class="na"> i18n-namespace-two=</span><span class="s">"BOOK_ONE.VERSION | title"</span>&gt;<span class="nt">@{BOOK_ONE.NAME | namespace-two}&lt;/h3&gt;</span>&rdquo;</span>
+</code></pre>
+                        </div>
+                        <div id="append_demo">
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <script type="text/javascript">
+        var LanguageData = {
+            'en':{
+                'BOOK_ONE':{
+                    'NAME': "HTML5 Authority Guidelines",
+                    'NCLASS': "text-danger",
+                    'VERSION': "1.0.2[EN]",
+                    'VCLASS': "label label-default"
+                },
+                'BOOK_TWO':{
+                    'NAME': "Javascript Authority Guidelines",
+                    'NCLASS': "text-danger",
+                    'VERSION': "5.1.3[EN]",
+                    'VCLASS': "label label-info"
+                }
+            },
+            'cn':{
+                'BOOK_ONE':{
+                    'NAME': "HTML5权威指南",
+                    'NCLASS': "text-success",
+                    'VERSION': "1.0.2[CN]",
+                    'VCLASS': "label label-primary"
+                },
+                'BOOK_TWO':{
+                    'NAME': "Javascript权威指南",
+                    'NCLASS': "text-success",
+                    'VERSION': "5.1.3[CN]",
+                    'VCLASS': "label label-warning"
+                }
+            }
+        }
+        var namespace_one = Translate.createNamespace({
+            namespace: "namespace-one",
+            defaultLanguage: 'en'
+        }).translations(LanguageData);
+        var namespace_two = Translate.createNamespace({
+            namespace: "namespace-two",
+            defaultLanguage: 'cn'
+        }).translations(LanguageData);
+        var insertDom = function () {
+            var tmp = '<h3 i18n-namespace-one="BOOK_TWO.NCLASS | class">' +
+                    '@{BOOK_TWO.NAME | namespace-one} ' +
+                    '<span i18n-namespace-one="BOOK_TWO.VCLASS | class">@{BOOK_TWO.VERSION | namespace-two}</span>' +
+                    '@{BOOK_ONE.NAME | namespace-two} ' +
+                    '<span i18n-namespace-two="BOOK_ONE.VCLASS | class">@{BOOK_ONE.VERSION | namespace-two}</span> </h3>';
+            var insertBox = document.getElementById('append_demo');
+            insertBox.appendChild(namespace_one.nodeString(tmp));
+        }
+    </script>
+</body>
+</html>

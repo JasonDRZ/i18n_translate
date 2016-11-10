@@ -8,20 +8,20 @@
     <!--<meta http-equiv="Pragma" content="no-cache" />-->
     <title translate="b.b_a">Title</title>
     <!--<script src="../dist/translate.2.2.0.min.js"></script>-->
-    <script src="../src/translate.2.2.0.js"></script>
+    <script src="../src/translate.2.2.1.js"></script>
 </head>
 <body style="padding: 10px 50px">
-<div translateWrapper="no">
+<multi-translation>
     <h1 style="color: red;" translate="{CSS.H1 | style}{CSS.H1}" transtwo="b.b_a | title">语言一转换区域</h1>
-    <!--<h1 style="color: red;" translate="CSS.H1 | style,CSS.H1,{CSS.H1 | data-tree}" transtwo="b.b_a | title">语言一转换区域</h1>-->
-    <!--<h1 translate="">@{b.b_a | translate}</h1>-->
+    <h1 style="color: red;" translate="CSS.H1 | style,CSS.H1,{CSS.H1 | data-tree}" transtwo="b.b_a | title">语言一转换区域</h1>
+    <h1 translate="">@{b.b_a | translate}</h1>
     <h1 style="color: red;">语言二转换区域</h1>
     <h1>@{b.b_a | transtwo}</h1>
     <h1>@{b.b_b.b_b_a | transtwo}</h1>
     <h1 style="color: red;">语言三转换区域</h1>
     <h1>@{a}</h1>
     <h1>@{b.b_a}</h1>
-</div>
+</multi-translation>
 <h1 style="color: red;">语言一转换区域</h1>
 <h2 translate="a" transtwo="b.b_a | title"></h2>
 <h2 translate="b.b_a"></h2>
@@ -51,7 +51,7 @@
         window.trans = Translate.create({
             "default": "zh",
             "namespace": "translate"
-        }).translation({//传入一个由单个或多个语言Object翻译对象集合
+        }).translations({//传入一个由单个或多个语言Object翻译对象集合
             "zh": {
                 'a': "第一",
                 'b': {
@@ -79,14 +79,14 @@
             }
         })
                 //传入一个由单个或多个语言版本组成的JSON字符串
-                .translation('{"en": {"a": "first", "b": {"b_a": "second", "b_b": {"b_b_a": "third"}}}}')
+                .translations('{"en": {"a": "first", "b": {"b_a": "second", "b_b": {"b_b_a": "third"}}}}')
                 //传入语言对应JSON字符串
-                .translation("cn",'{"a": "Number One","b": {"b_a": "Number two","b_b": {"b_b_a": "Number three"}},"CSS": {"H1": "color: green", "H2": "color: pink"}}');
+                .translations("cn",'{"a": "Number One","b": {"b_a": "Number two","b_b": {"b_b_a": "Number three"}},"CSS": {"H1": "color: green", "H2": "color: pink"}}');
 
         transVer['trans2'] = Translate.create({
             "default": "en",
             "namespace": "transtwo"
-        }).translation({
+        }).translations({
             "zh": {
                 'a': "@第一",
                 'b': {
@@ -117,7 +117,7 @@
         transVer['transDefault'] = Translate.create({
             "default": "en",
             "namespace": "default"
-        }).translation({
+        }).translations({
             "zh": {
                 'a': "DF@第一",
                 'b': {

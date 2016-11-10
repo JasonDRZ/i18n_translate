@@ -1,7 +1,7 @@
 {
   "name": "i18n_translate",
   "version": "1.0.0",
-  "description": "An isolate i18n plugin for frontend. ",
+  "description": "An isolate i18n plugin for no framework's frontend development.",
   "main": "index.js",
   "directories": {
     "example": "example"
