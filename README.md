@@ -2,7 +2,7 @@
 An independent i18n translation plugin for JS front-end  building work.
 
 ## DEMO
-[Translate DEMO](http://example.com)
+文件夹目录：i18n_translate/Demo/Demo2.2.3.html
 
 ## 接口
 
