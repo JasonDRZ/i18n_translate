@@ -87,7 +87,7 @@
         _filter = Array.prototype.filter;
     //删除数组中指定值的元素
     Array.prototype.clean = function(deleteValue) {
-        deleteValue = deleteValue ? deleteValue : '';
+        deleteValue = deleteValue ? deleteValue : ' ';
         for (var i = 0; i < this.length; i++) {
             if (this[i] == deleteValue) {
                 this.splice(i, 1);//返回指定的元素
